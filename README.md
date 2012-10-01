@@ -31,4 +31,4 @@ Changelog
 
 TODO
 ----
-* Nothing so far
+* Creating an Installer
