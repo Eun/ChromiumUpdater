@@ -27,7 +27,11 @@ Features
 
 Changelog
 ---------
+1.0:
 * Published to GitHub
+
+1.1:
+* Checking for connection before updating
 
 TODO
 ----

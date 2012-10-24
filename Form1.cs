@@ -35,6 +35,20 @@ namespace ChromiumUpdater
         public String sLatestVersion;
         public Thread thread;
         IniFile pIniFile;
+
+        [DllImport("wininet.dll", CharSet = CharSet.Auto)]
+        public static extern bool InternetGetConnectedState(ref ConnectionState lpdwFlags, int dwReserved);
+        [Flags]
+        public enum ConnectionState : int
+        {
+            INTERNET_CONNECTION_MODEM = 0x1,
+            INTERNET_CONNECTION_LAN = 0x2,
+            INTERNET_CONNECTION_PROXY = 0x4,
+            INTERNET_RAS_INSTALLED = 0x10,
+            INTERNET_CONNECTION_OFFLINE = 0x20,
+            INTERNET_CONNECTION_CONFIGURED = 0x40
+        }
+
         private void Form1_Load(object sender, EventArgs e)
         {
             AppPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "ChromiumUpdater");
@@ -64,7 +78,7 @@ namespace ChromiumUpdater
             sURL = pIniFile.GetKeyValue("GENERAL", "UpdateURL");
             if (sURL == null || sURL.Length == 0)
             {
-                sURL = "http://commondatastorage.googleapis.com/chromium-browser-snapshots/Win/";
+                sURL = "http://commondatastorage.googleapis.com/chromium-browser-continuous/Win/";
             }
 
             sVersionFile = pIniFile.GetKeyValue("GENERAL", "VersionFile");
@@ -142,11 +156,24 @@ namespace ChromiumUpdater
         public void UpdateThread()
         {
             MethodInvoker uicall;
-            uicall = delegate{progressBar1.Style = ProgressBarStyle.Marquee;};
+            uicall = delegate { progressBar1.Style = ProgressBarStyle.Marquee; label2.Text = "Latest Version: Waiting for connection..."; };
             Invoke(uicall);
+
+            ConnectionState Description = 0;
+            InternetGetConnectedState(ref Description, 0);
+            while ((Description & ConnectionState.INTERNET_CONNECTION_LAN) != ConnectionState.INTERNET_CONNECTION_LAN)
+            {
+                Thread.Sleep(1000);
+                InternetGetConnectedState(ref Description, 0);
+            }
+
+            uicall = delegate { label2.Text = "Latest Version: Refreshing..."; };
+            Invoke(uicall);
+           
 
             String sLatest = Path.Combine(AppPath, "LATEST");
             WebClient webClient = new WebClient();
+
             try
             {
                 webClient.DownloadFile(new Uri(sURL + sVersionFile), sLatest);
@@ -186,10 +213,11 @@ namespace ChromiumUpdater
                 Invoke(uicall);
                 thread = null;
             }
-            catch (SystemException err)
+            catch (Exception e)
             {
+                
                 thread = null;
-                uicall = delegate { label2.Text = err.Message; progressBar1.Style = ProgressBarStyle.Blocks; };
+                uicall = delegate { label2.Text = e.Message; progressBar1.Style = ProgressBarStyle.Blocks; };
                 Invoke(uicall);
                 if (g_frm.silent)
                 {
@@ -372,7 +400,7 @@ namespace ChromiumUpdater
                 sURL = textBox1.Text;
                 if (sURL.Length == 0)
                 {
-                    sURL = "http://commondatastorage.googleapis.com/chromium-browser-snapshots/Win/";
+                    sURL = "http://commondatastorage.googleapis.com/chromium-browser-continuous/Win/";
                 }
                 if (!sURL.EndsWith("/"))
                 {
