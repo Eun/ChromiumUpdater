@@ -32,3 +32,11 @@ Changelog
 TODO
 ----
 * Creating an Installer
+
+Update URLS
+-----------
+Stable Dev Builds
+`http://commondatastorage.googleapis.com/chromium-browser-continuous/Win/`
+
+Dev Builds
+`http://commondatastorage.googleapis.com/chromium-browser-snapshots/Win/`
